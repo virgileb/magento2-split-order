@@ -2,6 +2,7 @@
 
 namespace Magestat\SplitOrder\Model;
 
+use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Customer\Api\Data\GroupInterface;
@@ -30,6 +31,9 @@ class QuoteHandler implements QuoteHandlerInterface
      */
     private $extensionAttributes;
 
+
+    private $productRepository;
+
     /**
      * QuoteHandler constructor.
      * @param CheckoutSession $checkoutSession
@@ -39,11 +43,13 @@ class QuoteHandler implements QuoteHandlerInterface
     public function __construct(
         CheckoutSession $checkoutSession,
         HelperData $helperData,
-        ExtensionAttributesInterface $extensionAttributes
+        ExtensionAttributesInterface $extensionAttributes,
+        ProductRepositoryInterface $productRepository
     ) {
         $this->checkoutSession = $checkoutSession;
         $this->helperData = $helperData;
         $this->extensionAttributes = $extensionAttributes;
+        $this->productRepository = $productRepository;
     }
 
     /**
@@ -55,6 +61,7 @@ class QuoteHandler implements QuoteHandlerInterface
             return false;
         }
         $attributes = $this->helperData->getAttributes();
+
         if (empty($attributes)) {
             return false;
         }
@@ -63,7 +70,8 @@ class QuoteHandler implements QuoteHandlerInterface
         /** @var \Magento\Quote\Model\Quote\Item $item */
         foreach ($quote->getAllVisibleItems() as $item) {
             /** @var \Magento\Catalog\Model\Product $product */
-            $product = $item->getProduct();
+
+            $product = $this->productRepository->getById($item->getProduct()->getId());
 
             $attribute = $this->getProductAttributes($product, $attributes);
             if ($attribute === false) {
@@ -76,6 +84,7 @@ class QuoteHandler implements QuoteHandlerInterface
             return $groups;
         }
         return false;
+
     }
 
     /**
